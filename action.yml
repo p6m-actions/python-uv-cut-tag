@@ -1,0 +1,100 @@
+name: "Python UV Cut Tag"
+description: "GitHub Action for cutting versioned tags for Python projects using UV"
+author: "Jimmie Fulton <jimmie@ybor.ai>"
+
+# Define the inputs for this action
+inputs:
+  version-level:
+    description: "Version level to bump (patch, minor, or major)"
+    required: false
+    default: "patch"
+  pyproject-path:
+    description: "Path to pyproject.toml file"
+    required: false
+    default: "pyproject.toml"
+
+# Define the outputs for this action
+outputs:
+  version:
+    description: "The new version number"
+    value: ${{ steps.version.outputs.version }}
+  tag:
+    description: "The new tag that was created"
+    value: ${{ steps.version.outputs.tag }}
+
+# Define the runs configuration
+runs:
+  using: "composite"
+  steps:
+    - name: Install UV
+      shell: bash
+      run: |
+        # Install UV if not already available
+        if ! command -v uv &> /dev/null; then
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        fi
+
+        # Verify UV is available
+        uv --version
+
+    - name: Bump Version and Create Tag
+      id: version
+      shell: bash
+      run: |
+        # Ensure UV is in PATH
+        export PATH="$HOME/.local/bin:$PATH"
+
+        # Set git user identity for the commit
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+        # Check if pyproject.toml exists in the specified path
+        if [ "${{ inputs.pyproject-path }}" != "pyproject.toml" ]; then
+          if [ ! -f "${{ inputs.pyproject-path }}" ]; then
+            echo "Error: pyproject.toml not found at ${{ inputs.pyproject-path }}"
+            exit 1
+          fi
+          # For non-standard paths, we need to work in that directory
+          cd "$(dirname "${{ inputs.pyproject-path }}")"
+        fi
+
+        # Get current version using uv
+        current_version=$(uv version)
+        echo "Current version: $current_version"
+
+        # Bump version using uv
+        case "${{ inputs.version-level }}" in
+          "major"|"minor"|"patch")
+            uv version --bump ${{ inputs.version-level }}
+            ;;
+          *)
+            echo "Error: Invalid version-level. Must be 'patch', 'minor', or 'major'"
+            exit 1
+            ;;
+        esac
+
+        # Get the new version
+        new_version=$(uv version)
+        echo "New version: $new_version"
+
+        echo "version=$new_version" >> $GITHUB_OUTPUT
+
+        # Create tag with v prefix
+        TAG="v$new_version"
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+        # Commit the version bump (uv version automatically modifies pyproject.toml)
+        git add "${{ inputs.pyproject-path }}"
+        git commit -m "Bump version to $new_version"
+
+        # Create and push the tag
+        git tag $TAG
+        git push origin $TAG
+        git push
+
+# Define the branding for the action in the GitHub Marketplace
+branding:
+  icon: "tag"
+  color: "blue"
