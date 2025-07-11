@@ -8,3 +8,8 @@
 .project
 .classpath
 .settings/
+
+### Local development folders ###
+dotnet-cut-tag/
+js-pnpm-cut-tag/
+python-uv-setup/
