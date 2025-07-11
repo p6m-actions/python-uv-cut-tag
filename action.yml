@@ -60,8 +60,8 @@ runs:
           cd "$(dirname "${{ inputs.pyproject-path }}")"
         fi
 
-        # Get current version using uv
-        current_version=$(uv version)
+        # Get current version using uv (extract just the version number)
+        current_version=$(uv version | awk '{print $NF}')
         echo "Current version: $current_version"
 
         # Bump version using uv
@@ -75,8 +75,8 @@ runs:
             ;;
         esac
 
-        # Get the new version
-        new_version=$(uv version)
+        # Get the new version (extract just the version number)
+        new_version=$(uv version | awk '{print $NF}')
         echo "New version: $new_version"
 
         echo "version=$new_version" >> $GITHUB_OUTPUT
