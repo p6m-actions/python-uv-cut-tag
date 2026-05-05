@@ -26,6 +26,9 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Token Exchange
+      uses: p6m-actions/token-exchange@v2
+
     - name: Install UV
       shell: bash
       run: |
@@ -45,10 +48,6 @@ runs:
       run: |
         # Ensure UV is in PATH
         export PATH="$HOME/.local/bin:$PATH"
-
-        # Set git user identity for the commit
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
 
         # Check if pyproject.toml exists in the specified path
         if [ "${{ inputs.pyproject-path }}" != "pyproject.toml" ]; then
