@@ -86,7 +86,7 @@ runs:
 
         # Commit the version bump (uv version automatically modifies pyproject.toml)
         git add "${{ inputs.pyproject-path }}"
-        git commit -m "Bump version to $new_version"
+        git commit -m "[skip ci] Bump version to $new_version"
 
         # Create and push the tag
         git tag $TAG
